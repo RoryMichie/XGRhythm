@@ -85,15 +85,17 @@ A press arrives from a BindKey handler, is timestamped with PreciseNow, converte
 * A press matching no open window on its key is a stray: wrong.ogg plays and nothing else changes. Wrong keys and too-early or too-late presses all manifest as strays.
 * A hit whose window closes unclaimed is a miss: wrong.ogg and the hit's wrong sound play at window close, and the cue's completion ding is forfeited. A press after the window has closed is an ordinary stray — the opportunity has already vanished.
 
+The wrong sound is pitch-coded to say what went wrong: a stray plays pitched up when the press was early for the nearest hit on its key and pitched down when it was late, while a miss — no press at all — plays at normal pitch. Speech carries no mid-game feedback: every press silences it, so directional feedback rides the earcon and the full accounting waits for the pause and results screens.
+
 Ambient sounds fire at every hit's scheduled time regardless of outcome.
 
 # 10: Gameplay Screen
 
 Starting a level pushes a modal layer containing a role-less play-field CustomWidget. At level start, the keys the level uses are bound on it via BindKey press handlers; window focus loss zeroes held-key state. Closing the layer restores menu focus to the levels list.
 
-The play-field claims Escape itself (ahead of automatic dialog dismissal) and opens a pause layer: level music pauses in place (Sound.Pause keeps the position), a status line reports the running stats, a Resume button is both primary and cancel so Enter and Escape both resume, and a Quit level button abandons the run and returns to the menu.
+The play-field claims Escape itself (ahead of automatic dialog dismissal) and opens a pause layer: level music pauses in place (Sound.Pause keeps the position), every gameplay sound and ringing judgment earcon is silenced, a status line reports the running stats, a Resume button is both primary and cancel so Enter and Escape both resume, and a Quit level button abandons the run and returns to the menu. Leaving a level silences the same sounds, so nothing rings into the next screen.
 
-Running stats: correct hits, misses, strays, cues completed out of total, and mean absolute timing error of correct hits. When the track ends, a status box (SruiDialogs.ShowStatus) shows the same stats as the level's result, and dismissing it returns to the menu.
+Running stats: correct hits, misses, strays split into early and late, cues completed out of total, and the timing of correct hits as both mean absolute error and the average early/late lean. When the track ends, a status box (SruiDialogs.ShowStatus) shows the same stats as the level's result, and dismissing it returns to the menu.
 
 # 11: Project Layout
 

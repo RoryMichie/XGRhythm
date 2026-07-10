@@ -8,23 +8,40 @@ public sealed class LevelStats
     public int Correct;
     public int Missed;
     public int Strays;
+    public int EarlyStrays;
+    public int LateStrays;
     public int CuesCompleted;
     public int CuesTotal;
     public int HitsTotal;
     private double _absErrorSumMs;
+    private double _signedErrorSumMs;
 
-    public void RecordCorrect(double absErrorMs)
+    /// <summary>Record a correct hit's signed error (positive = late).</summary>
+    public void RecordCorrect(double signedErrorMs)
     {
         Correct++;
-        _absErrorSumMs += absErrorMs;
+        _absErrorSumMs += Math.Abs(signedErrorMs);
+        _signedErrorSumMs += signedErrorMs;
     }
 
     public double MeanAbsErrorMs => Correct == 0 ? 0.0 : _absErrorSumMs / Correct;
 
-    public string Describe() =>
-        $"Correct hits: {Correct} of {HitsTotal}. Misses: {Missed}. Stray presses: {Strays}.\n"
-        + $"Cues completed: {CuesCompleted} of {CuesTotal}.\n"
-        + $"Mean absolute timing error: {MeanAbsErrorMs:0.#} milliseconds.";
+    public double MeanSignedErrorMs => Correct == 0 ? 0.0 : _signedErrorSumMs / Correct;
+
+    public string Describe()
+    {
+        var strays = Strays == 0
+            ? "0"
+            : $"{Strays} ({EarlyStrays} early, {LateStrays} late)";
+        var lean = Math.Abs(MeanSignedErrorMs) < 1.0
+            ? "dead center on average"
+            : $"leaning {Math.Abs(MeanSignedErrorMs):0.#} milliseconds "
+                + (MeanSignedErrorMs < 0 ? "early" : "late");
+        return
+            $"Correct hits: {Correct} of {HitsTotal}. Misses: {Missed}. Stray presses: {strays}.\n"
+            + $"Cues completed: {CuesCompleted} of {CuesTotal}.\n"
+            + $"Mean absolute timing error: {MeanAbsErrorMs:0.#} milliseconds, {lean}.";
+    }
 }
 
 /// <summary>Schedules a level's sounds and judges its presses. With
@@ -54,6 +71,9 @@ public sealed class Judge
         public required double TimeMs { get; init; }
         public bool Judged;
     }
+
+    private const float EarlyPitch = 1.25f;
+    private const float LatePitch = 0.8f;
 
     private readonly SoundBank _bank;
     private readonly Earcons _earcons;
@@ -144,13 +164,12 @@ public sealed class Judge
         }
         if (best is null)
         {
-            Stats.Strays++;
-            _earcons.Wrong();
+            Stray(key, t);
             return;
         }
         best.Judged = true;
         best.Cue.Remaining--;
-        Stats.RecordCorrect(bestError);
+        Stats.RecordCorrect(t - best.TimeMs);
         if (best.Cue.Cue.KeySoundFile is string keySound)
             _bank.Play(keySound);
         if (best.Hit.CorrectFile is string correct)
@@ -160,6 +179,51 @@ public sealed class Judge
             Stats.CuesCompleted++;
             _earcons.Correct();
         }
+    }
+
+    /// <summary>A press outside every open window. The wrong sound
+    /// reports the direction relative to the nearest hit on the key:
+    /// pitched up for early, down for late.</summary>
+    private void Stray(Key key, double t)
+    {
+        Stats.Strays++;
+        var error = SignedErrorToNearest(key, t);
+        if (double.IsNaN(error))
+        {
+            _earcons.Wrong();
+        }
+        else if (error < 0)
+        {
+            Stats.EarlyStrays++;
+            _earcons.Wrong(EarlyPitch);
+        }
+        else
+        {
+            Stats.LateStrays++;
+            _earcons.Wrong(LatePitch);
+        }
+    }
+
+    /// <summary>Signed distance from the press to the nearest hit on its
+    /// key, judged or not (negative = early). NaN when the key has no
+    /// hits anywhere in the level.</summary>
+    private double SignedErrorToNearest(Key key, double t)
+    {
+        var best = double.NaN;
+        var bestAbs = double.MaxValue;
+        foreach (var hit in _hits)
+        {
+            if (hit.Hit.Key != key)
+                continue;
+            var error = t - hit.TimeMs;
+            var abs = Math.Abs(error);
+            if (abs < bestAbs)
+            {
+                bestAbs = abs;
+                best = error;
+            }
+        }
+        return best;
     }
 
     private void Miss(TrackedHit hit)

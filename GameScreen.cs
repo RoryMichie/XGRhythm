@@ -10,6 +10,7 @@ namespace XGRhythm;
 public sealed class GameScreen
 {
     private readonly SruiApp _app;
+    private readonly Earcons _earcons;
     private readonly Level _level;
     private readonly Dialog _dialog;
     private readonly Sound _music;
@@ -23,6 +24,7 @@ public sealed class GameScreen
     public GameScreen(SruiApp app, Level level, Earcons earcons, Settings settings, Action closed)
     {
         _app = app;
+        _earcons = earcons;
         _level = level;
         _dialog = app.OpenDialog();
         _ = new Label(_dialog, $"Playing {level.Title}.");
@@ -55,6 +57,7 @@ public sealed class GameScreen
         {
             _ticker.Stop();
             app.FocusLost = null;
+            earcons.HushFeedback();
             _music.Dispose();
             _bank.Dispose();
             closed();
@@ -99,6 +102,8 @@ public sealed class GameScreen
             return;
         _paused = true;
         _conductor.Pause();
+        _bank.StopAll();
+        _earcons.HushFeedback();
 
         var pause = _app.OpenDialog();
         _ = new Label(pause, $"Paused. {_judge.Stats.Describe()}");

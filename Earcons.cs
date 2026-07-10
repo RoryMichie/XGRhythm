@@ -55,7 +55,21 @@ public sealed class Earcons
     /// metronome.</summary>
     public void Correct() => Retrigger(_correct);
 
-    public void Wrong() => Retrigger(_wrong);
+    /// <summary>The failure sound, pitch-coded: above 1 for an early
+    /// press, below 1 for a late one, 1 for a plain miss.</summary>
+    public void Wrong(float pitch = 1f)
+    {
+        _wrong.Pitch = pitch;
+        Retrigger(_wrong);
+    }
+
+    /// <summary>Silence the judgment sounds mid-ring — pausing or
+    /// leaving a level shouldn't carry a wrong into the next screen.</summary>
+    public void HushFeedback()
+    {
+        _wrong.Stop();
+        _correct.Stop();
+    }
 
     private static void Retrigger(Sound sound)
     {
@@ -122,6 +136,14 @@ public sealed class SoundBank(SoundManager audio, SoundGroup bus) : IDisposable
         voices.Next = (voices.Next + 1) % voices.Sounds.Length;
         sound.Stop();
         sound.Play();
+    }
+
+    /// <summary>Stop every playing voice — pausing or leaving a level.</summary>
+    public void StopAll()
+    {
+        foreach (var voices in _pool.Values)
+            foreach (var sound in voices.Sounds)
+                sound.Stop();
     }
 
     public void Dispose()
