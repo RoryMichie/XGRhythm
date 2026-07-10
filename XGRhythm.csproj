@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>XGRhythm</RootNamespace>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- SRUI is consumed from source; SruiRoot is overridable for other
+       machine layouts (dotnet build -p:SruiRoot=...). -->
+  <PropertyGroup>
+    <SruiRoot Condition="'$(SruiRoot)' == ''">C:\srui</SruiRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(SruiRoot)\Srui.Net\Srui.Net.csproj" />
+    <ProjectReference Include="$(SruiRoot)\Srui.Audio\Srui.Audio.csproj" />
+  </ItemGroup>
+
+  <!-- Native dependencies staged by srui's native/build-native.ps1. -->
+  <ItemGroup>
+    <None Include="$(SruiRoot)\native\out\prism.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(SruiRoot)\native\out\SDL3.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(SruiRoot)\native\out\cosmos.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(SruiRoot)\native\out\phonon.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Game assets, kept under asset\ beside the executable. -->
+  <ItemGroup>
+    <None Include="asset\**\*.ogg" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
