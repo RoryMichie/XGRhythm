@@ -8,8 +8,8 @@ public sealed class LevelStats
     public int Correct;
     public int Missed;
     public int Strays;
-    public int EarlyStrays;
-    public int LateStrays;
+    public int WrongEarly;
+    public int WrongLate;
     public int CuesCompleted;
     public int CuesTotal;
     public int HitsTotal;
@@ -30,29 +30,34 @@ public sealed class LevelStats
 
     public string Describe()
     {
-        var strays = Strays == 0
+        var wrongs = WrongEarly + WrongLate == 0
             ? "0"
-            : $"{Strays} ({EarlyStrays} early, {LateStrays} late)";
+            : $"{WrongEarly + WrongLate} ({WrongEarly} early, {WrongLate} late)";
         var lean = Math.Abs(MeanSignedErrorMs) < 1.0
             ? "dead center on average"
             : $"leaning {Math.Abs(MeanSignedErrorMs):0.#} milliseconds "
                 + (MeanSignedErrorMs < 0 ? "early" : "late");
         return
-            $"Correct hits: {Correct} of {HitsTotal}. Misses: {Missed}. Stray presses: {strays}.\n"
+            $"Correct hits: {Correct} of {HitsTotal}. Wrong presses: {wrongs}. "
+            + $"Misses: {Missed}. Stray presses: {Strays}.\n"
             + $"Cues completed: {CuesCompleted} of {CuesTotal}.\n"
             + $"Mean absolute timing error: {MeanAbsErrorMs:0.#} milliseconds, {lean}.";
     }
 }
 
 /// <summary>Schedules a level's sounds and judges its presses. With
-/// tolerance t, a hit expected at time e is claimable in [e-t, e+t]; a
-/// press claims the nearest pending hit on its key across all active
-/// cues, a press matching no open window is a stray (wrong.ogg, nothing
-/// consumed), and a window that closes unclaimed is a miss (wrong.ogg
-/// plus the hit's wrong sound, cue ding forfeited). Presses arrive
-/// already on the music clock; the calibrated input latency is
-/// subtracted here, and window closes lag by the same offset so a
-/// late-arriving corrected press never targets a closed window.</summary>
+/// tolerance t, a hit expected at time e is correct-claimable in
+/// [e-t, e+t]; a press claims the nearest pending hit on its key across
+/// all active cues. A press that misses tolerance but lands within the
+/// attempt window (twice the tolerance, at least 150 ms) of a pending
+/// hit consumes it as a wrong press — one flub costs one wrong sound,
+/// not a stray now and a miss later. A press beyond every attempt
+/// window is a stray (nothing consumed), and a window that closes
+/// unclaimed is a miss (wrong.ogg plus the hit's wrong sound, cue ding
+/// forfeited). Presses arrive already on the music clock; the
+/// calibrated input latency is subtracted here, and window closes lag
+/// by the same offset so a late-arriving corrected press never targets
+/// a closed window.</summary>
 public sealed class Judge
 {
     private sealed class CueState
@@ -74,6 +79,7 @@ public sealed class Judge
 
     private const float EarlyPitch = 1.25f;
     private const float LatePitch = 0.8f;
+    private const double MinAttemptWindowMs = 150.0;
 
     private readonly SoundBank _bank;
     private readonly Earcons _earcons;
@@ -164,6 +170,21 @@ public sealed class Judge
         }
         if (best is null)
         {
+            // No correct claim: a flub near a pending hit consumes it as
+            // a wrong press — one wrong sound now instead of a stray now
+            // AND a miss when the window closes. Earliest pending on the
+            // key, so a consistently-late run misaligns nothing.
+            var attempt = Math.Max(2 * _toleranceMs, MinAttemptWindowMs);
+            for (var i = _closeCursor; i < _hits.Length; i++)
+            {
+                var hit = _hits[i];
+                if (hit.TimeMs - attempt > t)
+                    break;
+                if (hit.Judged || hit.Hit.Key != key || Math.Abs(t - hit.TimeMs) > attempt)
+                    continue;
+                WrongPress(hit, t - hit.TimeMs);
+                return;
+            }
             Stray(key, t);
             return;
         }
@@ -181,27 +202,39 @@ public sealed class Judge
         }
     }
 
-    /// <summary>A press outside every open window. The wrong sound
-    /// reports the direction relative to the nearest hit on the key:
-    /// pitched up for early, down for late.</summary>
+    /// <summary>A press that missed tolerance but landed inside the
+    /// attempt window of a pending hit: the hit is spent as a wrong,
+    /// with the direction on the wrong sound's pitch.</summary>
+    private void WrongPress(TrackedHit hit, double signedError)
+    {
+        hit.Judged = true;
+        hit.Cue.Remaining--;
+        hit.Cue.Spoiled = true;
+        if (signedError < 0)
+        {
+            Stats.WrongEarly++;
+            _earcons.Wrong(EarlyPitch);
+        }
+        else
+        {
+            Stats.WrongLate++;
+            _earcons.Wrong(LatePitch);
+        }
+        if (hit.Hit.WrongFile is string wrong)
+            _bank.Play(wrong);
+    }
+
+    /// <summary>A press nowhere near any pending hit on its key. Nothing
+    /// is consumed; the wrong sound's pitch still reports the direction
+    /// to the nearest hit, judged or not.</summary>
     private void Stray(Key key, double t)
     {
         Stats.Strays++;
         var error = SignedErrorToNearest(key, t);
         if (double.IsNaN(error))
-        {
             _earcons.Wrong();
-        }
-        else if (error < 0)
-        {
-            Stats.EarlyStrays++;
-            _earcons.Wrong(EarlyPitch);
-        }
         else
-        {
-            Stats.LateStrays++;
-            _earcons.Wrong(LatePitch);
-        }
+            _earcons.Wrong(error < 0 ? EarlyPitch : LatePitch);
     }
 
     /// <summary>Signed distance from the press to the nearest hit on its

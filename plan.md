@@ -82,10 +82,11 @@ SRUI's loop runs at a 2 ms idle cadence, so scheduled sounds (calls, ambients) a
 A press arrives from a BindKey handler, is timestamped with PreciseNow, converted to music time, and reduced by the calibrated input latency. With tolerance t, a hit expected at time e has the open window [e - t, e + t]; the window is the hit's whole lifetime for judging purposes.
 
 * The press's key is matched against the pending hits of all active cues whose window contains the press time. The nearest such hit by expected time claims the press: the hit is correct, and the cue's key sound plus the hit's correct sound play.
-* A press matching no open window on its key is a stray: wrong.ogg plays and nothing else changes. Wrong keys and too-early or too-late presses all manifest as strays.
-* A hit whose window closes unclaimed is a miss: wrong.ogg and the hit's wrong sound play at window close, and the cue's completion ding is forfeited. A press after the window has closed is an ordinary stray — the opportunity has already vanished.
+* A press that misses tolerance but lands within the attempt window — twice the tolerance, never below 150 ms — of a pending hit on its key consumes that hit as a wrong press: wrong.ogg and the hit's wrong sound play at the press, and the cue's ding is forfeited. The earliest pending hit within the window is the one spent, so a consistently late run charges each flub to the note it was meant for. One mistake therefore costs exactly one wrong sound, never a stray at the press and a second wrong when the window closes.
+* A press beyond every attempt window on its key is a stray: wrong.ogg plays and nothing is consumed.
+* A hit whose window closes with no press at all is a miss: wrong.ogg and the hit's wrong sound play at window close, and the cue's completion ding is forfeited.
 
-The wrong sound is pitch-coded to say what went wrong: a stray plays pitched up when the press was early for the nearest hit on its key and pitched down when it was late, while a miss — no press at all — plays at normal pitch. Speech carries no mid-game feedback: every press silences it, so directional feedback rides the earcon and the full accounting waits for the pause and results screens.
+The wrong sound is pitch-coded to say what went wrong: wrong presses and strays play pitched up when the press was early and pitched down when it was late, while a miss — no press at all — plays at normal pitch. Speech carries no mid-game feedback: every press silences it, so directional feedback rides the earcon and the full accounting (wrong presses split early and late) waits for the pause and results screens.
 
 Ambient sounds fire at every hit's scheduled time regardless of outcome.
 
