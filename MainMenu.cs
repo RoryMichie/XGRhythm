@@ -21,10 +21,9 @@ public sealed class PeriodItem(SruiApp app, uint frames) : IListItem
         $"{Frames} frames, {Frames * 1000.0 / app.AudioSampleRate:0.#} milliseconds";
 }
 
-/// <summary>The main screen: the levels list (the layer's primary, so
-/// Enter anywhere starts the selected level) and the live settings.
-/// Settings apply as the selection or value moves; Enter on them is a
-/// genuine no-op.</summary>
+/// <summary>The main screen: the levels list (Enter on it starts the
+/// selected level) and the live settings. Settings apply as the
+/// selection or value moves; Enter on them is a genuine no-op.</summary>
 public sealed class MainMenu
 {
     private static readonly (string Name, int Ms)[] Tolerances =
@@ -54,7 +53,8 @@ public sealed class MainMenu
         _ = new Label(app, "XGRhythm");
         _levels = new ListBox<LevelItem>(
             app, "Levels",
-            LevelRegistry.All.Select(l => new LevelItem(l)).ToList(), numbered: true);
+            LevelRegistry.All.Select(l => new LevelItem(l)).ToList(),
+            numbered: true, activateItems: true);
         var musicVolume = new Slider(app, "Music volume", settings.MusicVolume, 0, 100, unit: "%");
         var masterVolume = new Slider(
             app, "Master volume", settings.MasterVolume, 0, 100, unit: "%");
@@ -80,7 +80,6 @@ public sealed class MainMenu
             ? periodIndex
             : Array.IndexOf(Periods, 128u); // the engine's low-latency default
 
-        app.SetPrimary(_levels);
         _levels.Activated += StartSelected;
         musicVolume.Changed += () =>
         {
