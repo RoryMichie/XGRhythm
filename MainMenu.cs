@@ -125,6 +125,12 @@ public sealed class MainMenu
     {
         if (_levels.SelectedItem is not LevelItem item)
             return;
+        if (item.Level is BrokenLevel broken)
+        {
+            _earcons.Wrong();
+            _app.Announce($"Can't play: {broken.Error}");
+            return;
+        }
         _earcons.Enter();
         _menuMusic.Pause();
         _ = new GameScreen(_app, item.Level, _earcons, _settings, closed: _menuMusic.Play);

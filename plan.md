@@ -56,9 +56,18 @@ A mu below zero means the player anticipates the beat rather than reacting to it
 
 # 6: Levels
 
-A level is defined in C# code, one class per level under the Levels directory, registered in a static list the levels list reads. A level carries a title, the music file name (in the asset folder), the tempo in BPM, the offset in ms of bar 1 beat 1 within the music file, and its cues. Tracks are produced at perfect tempo, so a single BPM and offset suffice; there is no tempo map.
+A level is a CSV file in the levels folder beside the executable, one level per file, discovered at startup and listed in file-name order. A file that fails to parse still appears in the list, marked failed, and announces its error instead of playing. Tracks are produced at perfect tempo, so a single BPM and offset suffice; there is no tempo map.
 
-Until real tracks are added, the first test level uses a synthesized track with a plainly audible beat at a known BPM.
+The format is line-oriented: blank lines and lines beginning with # are ignored, fields are comma-separated and whitespace-trimmed, and the first field names the record type. Trailing optional fields may be omitted or left empty. The records:
+
+* level, title, music file, bpm, beat-one offset ms — required once, before any cue. The music file lives in the asset folder; the offset (default 0) is where bar 1 beat 1 sits in it. Titles cannot contain commas.
+* cue, bar, beat, percent, key sound — starts a cue at the anchor. Beat defaults to 1, percent to 0; the key sound (what the player's own presses sound like) may be absent. The call and hit rows that follow belong to this cue, until the next cue row. A cue must have at least one hit.
+* call, offset beats, sound file — a call at the offset from the anchor.
+* hit, offset beats, key, ambient, correct, wrong — an expected key with its three optional sounds. Keys use srui's config names (space, f, enter, and so on).
+
+Every sound file a level references is checked against the asset folder at load time, so a missing asset reads as a load failure in the menu rather than a crash mid-level.
+
+Until real tracks are added, the test level (levels\test.csv) uses a synthesized track with a plainly audible beat at a known BPM.
 
 # 7: Cues
 
@@ -108,8 +117,9 @@ Running stats: correct hits, misses, strays split into early and late, cues comp
 * c:\admin\XGRhythm\Conductor.cs — the music clock and beat math.
 * c:\admin\XGRhythm\Judge.cs — hit windows, press matching, stats.
 * c:\admin\XGRhythm\Cue.cs — cue, call, and hit models.
-* c:\admin\XGRhythm\Level.cs — the level base and registry.
-* c:\admin\XGRhythm\Levels\ — one file per level.
+* c:\admin\XGRhythm\Level.cs — the level base and the registry that scans the levels folder.
+* c:\admin\XGRhythm\CsvLevel.cs — the CSV level parser (section 6).
+* c:\admin\XGRhythm\levels\ — CSV level files, one per level.
 * c:\admin\XGRhythm\Calibration.cs — the calibration dialog and estimator.
 * c:\admin\XGRhythm\Settings.cs — the settings model, load/save, JSON context.
 * c:\admin\XGRhythm\asset\ — all OGG sounds and level music.

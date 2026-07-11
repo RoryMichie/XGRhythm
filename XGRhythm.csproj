@@ -28,9 +28,11 @@
     <None Include="$(SruiRoot)\native\out\phonon.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- Game assets, kept under asset\ beside the executable. -->
+  <!-- Game assets and levels, kept under asset\ and levels\ beside the
+       executable. -->
   <ItemGroup>
     <None Include="asset\**\*.ogg" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="levels\**\*.csv" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,63 @@
+# The synthesized proving ground: 120 BPM, 32 bars, every cue shape the
+# engine supports. All responses are Space, and every hit carries an
+# ambient marker at its exact moment, so the timing is learnable by ear.
+# Format: plan.md section 6.
+level, Test pattern, testtrack.ogg, 120, 0
+
+# Simple echoes: two calls on beats 1 and 2, answered on 3 and 4 at the
+# same spacing. Every other bar.
+cue, 2, 1, 0, tap.ogg
+call, 0, call.ogg
+call, 1, call.ogg
+hit, 2, space, amb.ogg
+hit, 3, space, amb.ogg
+
+cue, 4, 1, 0, tap.ogg
+call, 0, call.ogg
+call, 1, call.ogg
+hit, 2, space, amb.ogg
+hit, 3, space, amb.ogg
+
+cue, 6, 1, 0, tap.ogg
+call, 0, call.ogg
+call, 1, call.ogg
+hit, 2, space, amb.ogg
+hit, 3, space, amb.ogg
+
+cue, 8, 1, 0, tap.ogg
+call, 0, call.ogg
+call, 1, call.ogg
+hit, 2, space, amb.ogg
+hit, 3, space, amb.ogg
+
+# An eighth-note run: four calls at eighth spacing, answered at the same
+# spacing.
+cue, 11, 1, 0, tap.ogg
+call, 0, call.ogg
+call, 0.5, call.ogg
+call, 1, call.ogg
+call, 1.5, call.ogg
+hit, 2, space, amb.ogg
+hit, 2.5, space, amb.ogg
+hit, 3, space, amb.ogg
+hit, 3.5, space, amb.ogg
+
+# Interleaved: call, answer, call, answer — a call arrives after the
+# previous response has already completed.
+cue, 14, 1, 0, tap.ogg
+call, 0, call.ogg
+hit, 1, space, amb.ogg
+call, 2, call.ogg
+hit, 3, space, amb.ogg
+
+# Two cues at once: one answers on the beat, the other halfway off it,
+# weaving a single eighth-note response line between them.
+cue, 17, 1, 0, tap.ogg
+call, 0, call.ogg
+call, 1, call.ogg
+hit, 2, space, amb.ogg
+hit, 3, space, amb.ogg
+
+cue, 17, 1, 50, tap.ogg
+hit, 2, space, amb.ogg
+hit, 3, space, amb.ogg
