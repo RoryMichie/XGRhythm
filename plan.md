@@ -36,7 +36,7 @@ The tolerance list offers named difficulties, where the value is the half-width 
 * Expert, 25 ms.
 * Insane, 10 ms.
 
-The buffer-size list offers 128, 256, 512, and 1024 frames. Each item's text includes the millisecond equivalent computed live from the device sample rate (frames * 1000 / SruiApp.AudioSampleRate). A selection change applies immediately by writing SruiApp.AudioPeriodFrames — no debounce; the brief device-rebuild gap is accepted. After applying, the granted period is read back, and if it differs from the request the granted value is announced.
+The buffer-size list offers 8, 16, 32, 64, 128, 256, 512, and 1024 frames; the device is free to grant more than the tiny requests can honor. Each item's text includes the millisecond equivalent computed live from the device sample rate (frames * 1000 / SruiApp.AudioSampleRate). A selection change applies immediately by writing SruiApp.AudioPeriodFrames — no debounce; the brief device-rebuild gap is accepted. After applying, the granted period is read back, and if it differs from the request the granted value is announced.
 
 Menu music loops on the main screen, stops when a level starts, and resumes when the player returns.
 

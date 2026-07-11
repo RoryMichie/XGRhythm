@@ -37,7 +37,7 @@ public sealed class MainMenu
         ("Insane", 10),
     ];
 
-    private static readonly uint[] Periods = [128, 256, 512, 1024];
+    private static readonly uint[] Periods = [8, 16, 32, 64, 128, 256, 512, 1024];
 
     private readonly SruiApp _app;
     private readonly Settings _settings;
@@ -76,7 +76,9 @@ public sealed class MainMenu
         var toleranceIndex = Array.FindIndex(Tolerances, t => t.Ms == settings.ToleranceMs);
         tolerance.SelectedIndex = toleranceIndex >= 0 ? toleranceIndex : 2; // Moderate
         var periodIndex = Array.IndexOf(Periods, settings.PeriodFrames);
-        buffer.SelectedIndex = periodIndex >= 0 ? periodIndex : 0;
+        buffer.SelectedIndex = periodIndex >= 0
+            ? periodIndex
+            : Array.IndexOf(Periods, 128u); // the engine's low-latency default
 
         app.SetPrimary(_levels);
         _levels.Activated += StartSelected;
