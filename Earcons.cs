@@ -78,27 +78,22 @@ public sealed class Earcons
     }
 }
 
-/// <summary>Plays the navigation sound for every perceived movement the
-/// widgets announce: focus landing on a different widget and list
-/// selection changes. Re-announcements of the same widget (regaining
-/// the window, speak-focus) and boundary bumps stay silent — nothing
-/// moved — and sliders play from their Changed handlers instead, at the
-/// volume they denote.</summary>
+/// <summary>Plays the navigation sound for movement the user made:
+/// focus moved by the tab ring, hierarchy navigation, or a shortcut
+/// jump, and list selection changes. Focus that came to the user —
+/// dialog transitions, recovery, re-announcements — stays silent, as do
+/// boundary bumps; sliders play from their Changed handlers instead, at
+/// the volume they denote.</summary>
 public sealed class EarconReader(Earcons earcons) : IReader
 {
-    private Widget? _lastFocus;
-
     public void OnEvent(AccessibilityEvent e)
     {
         switch (e)
         {
-            case AccessibilityEvent.Focused focused:
-                if (!ReferenceEquals(focused.Widget, _lastFocus))
-                {
-                    _lastFocus = focused.Widget;
-                    earcons.Move();
-                }
-                break;
+            case AccessibilityEvent.Focused
+            {
+                Cause: FocusCause.UserNavigation or FocusCause.Shortcut,
+            }:
             case AccessibilityEvent.ItemNav { BoundaryHit: null }:
                 earcons.Move();
                 break;
